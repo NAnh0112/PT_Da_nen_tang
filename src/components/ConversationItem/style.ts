@@ -1,0 +1,3 @@
+import { StyleSheet } from 'react-native';
+import { colors } from '../../theme';
+export const styles = StyleSheet.create({ row: { alignItems: 'center', borderBottomColor: colors.border, borderBottomWidth: 1, flexDirection: 'row', paddingVertical: 13 }, body: { flex: 1, marginLeft: 12 }, top: { flexDirection: 'row', justifyContent: 'space-between' }, name: { color: colors.text, fontSize: 15, fontWeight: '600' }, time: { color: colors.muted, fontSize: 11 }, message: { color: colors.muted, fontSize: 12, marginTop: 5 }, badge: { alignItems: 'center', backgroundColor: colors.danger, borderRadius: 10, height: 19, justifyContent: 'center', marginLeft: 8, minWidth: 19 }, badgeText: { color: colors.white, fontSize: 10, fontWeight: '700' } });

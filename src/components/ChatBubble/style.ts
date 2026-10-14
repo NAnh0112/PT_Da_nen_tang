@@ -1,0 +1,3 @@
+import { StyleSheet } from 'react-native';
+import { colors } from '../../theme';
+export const styles = StyleSheet.create({ row: { flexDirection: 'row', marginBottom: 14 }, mine: { justifyContent: 'flex-end' }, bubble: { backgroundColor: colors.white, borderRadius: 16, borderTopLeftRadius: 3, maxWidth: '78%', padding: 12 }, myBubble: { backgroundColor: colors.primary, borderTopLeftRadius: 16, borderTopRightRadius: 3 }, text: { color: colors.text, fontSize: 14, lineHeight: 20 }, myText: { color: colors.white }, time: { color: colors.muted, fontSize: 10, marginTop: 5 }, myTime: { color: '#DDE8FF', textAlign: 'right' } });

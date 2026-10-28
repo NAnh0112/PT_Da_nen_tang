@@ -1,97 +1,108 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Bài thực hành 5 - Chat 1-1 realtime
 
-# Getting Started
+Ứng dụng dùng React Native CLI, React Navigation, Firebase Authentication,
+Realtime Database và `@react-native-community/geolocation`. Code Firebase nằm
+trong `src/services/` để dễ học và dễ sửa.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## 1. Khởi tạo project mới (nếu chưa có Bài 4)
 
-## Step 1: Start Metro
+```powershell
+npx @react-native-community/cli@latest init CHAT
+cd CHAT
+npm install @react-navigation/native @react-navigation/native-stack @react-navigation/bottom-tabs
+npm install firebase @react-native-async-storage/async-storage @react-native-community/geolocation
+npm install react-native-screens react-native-safe-area-context
+```
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+Nếu đang dùng đúng project này thì chỉ cần:
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+```powershell
+cd D:\APP\CHAT
+npm install
+```
 
-```sh
-# Using npm
+## 2. Tạo Firebase
+
+1. Vào Firebase Console, tạo project mới.
+2. Chọn **Authentication > Sign-in method**, bật **Email/Password**.
+3. Chọn **Realtime Database > Create database**. Trong lúc làm bài có thể
+   chọn Test mode, nhưng trước khi nộp nên thay bằng luật ở phần dưới.
+4. Vào **Project settings > Your apps > Web app**, tạo một ứng dụng Web.
+5. Sao chép `firebaseConfig` vào
+   [`firebaseConfig.js`](./src/services/firebaseConfig.js). Không ghi mật khẩu
+   Firebase vào code; các giá trị config web này không phải mật khẩu.
+
+## 3. Luật Realtime Database
+
+Trong Realtime Database > Rules, dùng luật đơn giản sau. Người dùng chỉ đọc
+được dữ liệu khi đã đăng nhập; mỗi tài khoản chỉ được sửa hồ sơ của mình.
+
+```json
+{
+  "rules": {
+    ".read": "auth != null",
+    ".write": "auth != null",
+    "users": {
+      "$uid": {
+        ".write": "auth.uid === $uid"
+      }
+    }
+  }
+}
+```
+
+Trong sản phẩm thật nên viết luật chi tiết hơn cho `chats` và
+`conversations`. Luật trên phù hợp để minh họa trong bài thực hành, dễ kiểm
+tra từ hai thiết bị.
+
+## 4. Quyền vị trí
+
+- Android: quyền đã được thêm vào `android/app/src/main/AndroidManifest.xml`.
+- iOS: nội dung xin quyền đã được thêm vào `ios/CHAT/Info.plist`.
+- Khi bấm nút `📍`, app xin quyền Android lúc chạy. Nếu từ chối, app báo rõ
+  và không tạo tin nhắn rỗng.
+
+## 5. Chạy ứng dụng
+
+Mở hai terminal:
+
+```powershell
+cd D:\APP\CHAT
 npm start
-
-# OR using Yarn
-yarn start
 ```
 
-## Step 2: Build and run your app
+Terminal thứ hai:
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
-
-```sh
-# Using npm
+```powershell
+cd D:\APP\CHAT
 npm run android
-
-# OR using Yarn
-yarn android
 ```
 
-### iOS
+Đăng ký hai email khác nhau trên hai emulator/điện thoại. Sau đó kiểm tra:
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+1. Hai tài khoản xuất hiện trong Danh bạ (trừ tài khoản hiện tại).
+2. Trạng thái online đổi ngay khi đăng nhập/đăng xuất.
+3. Tin nhắn và vị trí xuất hiện ở cả hai máy.
+4. Home sắp xếp cuộc trò chuyện mới nhất lên đầu.
+5. Tin đến khi đang ở Home làm tăng badge chưa đọc; mở chat sẽ đưa về 0.
+6. Tab Thông báo giữ danh sách của Bài 4; chạm một dòng để đánh dấu đã đọc.
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+## 6. Giải thích các phần chính
 
-```sh
-bundle install
+- `src/services/chatService.js`: tạo `chatId` ổn định cho hai UID, đăng ký
+  listener và trả về hàm hủy listener trong `useEffect`, gửi tin nhắn, tăng
+  unread bằng `transaction`, cập nhật presence.
+- `ChatScreen.js`: tin của mình ở bên phải, tin đối phương bên trái; tin
+  vị trí mở Google Maps bằng latitude/longitude.
+- `HomeScreen.js`: lắng nghe `conversations/{uid}` nên không cần tải lại màn
+  hình.
+- `App.tsx`: `onAuthStateChanged` quyết định hiển thị nhóm màn hình đăng nhập
+  hay nhóm màn hình chính.
+
+Kiểm tra mã:
+
+```powershell
+cd D:\APP\CHAT
+npm run lint
+npx tsc --noEmit
 ```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
-```
-
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
-
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
-
-## Step 3: Modify your app
-
-Now that you have successfully run the app, let's make changes!
-
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.

@@ -1,97 +1,161 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# AdvancedChatApp - Bài thực hành 6
 
-# Getting Started
+Ứng dụng chat nhóm bằng **React Native CLI + Firebase Realtime Database**.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## 1. Tạo dự án mới từ đầu
 
-## Step 1: Start Metro
+Đây là các lệnh Windows PowerShell. Nếu đã có thư mục `AdvancedChatApp`, có thể bỏ qua bước tạo dự án và chép mã nguồn vào đúng cấu trúc bên dưới.
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+```powershell
+npx @react-native-community/cli@latest init AdvancedChatApp
+Set-Location .\AdvancedChatApp
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+npm install firebase @react-native-async-storage/async-storage
+npm install @react-navigation/native @react-navigation/native-stack @react-navigation/bottom-tabs
+npm install react-native-screens react-native-safe-area-context
+npm install @react-native-community/geolocation
+npm install react-native-image-picker @react-native-clipboard/clipboard
 
-```sh
-# Using npm
-npm start
-
-# OR using Yarn
-yarn start
+npx react-native start --reset-cache
 ```
 
-## Step 2: Build and run your app
+Mở cửa sổ PowerShell thứ hai:
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
-
-```sh
-# Using npm
-npm run android
-
-# OR using Yarn
-yarn android
+```powershell
+Set-Location .\AdvancedChatApp
+npx react-native run-android
 ```
 
-### iOS
+## 2. Bật máy ảo Android
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+1. Mở Android Studio.
+2. Chọn **More Actions > Virtual Device Manager**.
+3. Tạo máy ảo Pixel với Android API 35 hoặc API 36.
+4. Nhấn nút **Play** để bật máy ảo.
+5. Kiểm tra thiết bị:
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
+```powershell
+adb devices
 ```
 
-Then, and every time you update your native dependencies, run:
+Nếu thấy trạng thái `device`, chạy:
 
-```sh
-bundle exec pod install
+```powershell
+npx react-native run-android
 ```
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+Nếu Metro không tự kết nối:
 
-```sh
-# Using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
+```powershell
+adb reverse tcp:8081 tcp:8081
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+## 3. Cấu trúc mã nguồn
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+```text
+AdvancedChatApp/
+├─ App.tsx
+├─ database.rules.json
+├─ src/
+│  ├─ components/
+│  │  ├─ MessageActionModal.js
+│  │  └─ MessageBubble.js
+│  ├─ navigation/
+│  │  ├─ MainTabs.js
+│  │  └─ RootNavigator.js
+│  ├─ screens/
+│  │  ├─ ChatScreen.js
+│  │  ├─ CreateGroupScreen.js
+│  │  ├─ HomeScreen.js
+│  │  ├─ NotificationsScreen.js
+│  │  ├─ LoginScreen.js
+│  │  └─ RegisterScreen.js
+│  ├─ services/
+│  │  ├─ firebase.js
+│  │  ├─ authService.js
+│  │  ├─ chatService.js
+│  │  ├─ groupService.js
+│  │  ├─ notificationService.js
+│  │  ├─ uploadService.js
+│  │  └─ locationService.js
+│  └─ utils/
+│     └─ format.js
+└─ __tests__/
+   └─ App.test.tsx
+```
 
-## Step 3: Modify your app
+Các thư mục có thể tạo bằng PowerShell:
 
-Now that you have successfully run the app, let's make changes!
+```powershell
+New-Item -ItemType Directory -Force `
+  src\components,src\navigation,src\screens,src\services,src\utils,__mocks__
+New-Item -ItemType File -Force `
+  src\services\firebase.js,src\services\chatService.js,src\services\groupService.js,`
+  src\services\notificationService.js,src\services\uploadService.js,`
+  src\services\locationService.js,database.rules.json
+```
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+## 4. Cấu hình Firebase
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+1. Vào Firebase Console và tạo project.
+2. Bật **Authentication > Sign-in method > Email/Password**.
+3. Tạo **Realtime Database**.
+4. Vào **Project settings > Your apps**, tạo Web app.
+5. Chép `firebaseConfig` vào `src/services/firebase.js`.
+6. Dùng toàn bộ nội dung trong `database.rules.json` cho tab **Realtime Database > Rules**.
+7. Nhấn **Publish**.
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+`firebase.js` dùng `initializeAuth` với AsyncStorage để phiên đăng nhập không mất khi đóng ứng dụng. Không dùng import `firebase/auth/react-native`; với Firebase 10 dùng:
 
-## Congratulations! :tada:
+```js
+import { initializeAuth, getReactNativePersistence } from '@firebase/auth';
+```
 
-You've successfully run and modified your React Native App. :partying_face:
+## 5. Cấu hình Cloudinary
 
-### Now what?
+1. Tạo tài khoản Cloudinary.
+2. Vào **Settings > Upload > Upload presets**.
+3. Tạo một preset mới và chọn **Signing mode: Unsigned**.
+4. Ghi `cloud name` và `upload preset` vào `src/services/uploadService.js`.
+5. Không ghi API Secret vào mã nguồn.
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
+Ảnh được giới hạn cạnh dài tối đa 1024px trước khi tải lên. Firebase chỉ lưu URL Cloudinary.
 
-# Troubleshooting
+## 6. Các tính năng đã cài đặt
 
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+- Đăng ký, đăng nhập, đăng xuất bằng Firebase Auth.
+- Danh bạ và trạng thái online/offline theo thời gian thực.
+- Chat 1-1 và chat nhóm.
+- Gửi tin nhắn, vị trí và ảnh.
+- Trạng thái `đang soạn tin…` tự tắt sau 3 giây.
+- Trạng thái `Đã gửi`, `Đã xem` và số người đã xem trong nhóm.
+- `onDisconnect()` cho online, active conversation và typing.
+- Thu hồi tin nhắn bằng `recalled: true`.
+- Sao chép tin nhắn và thả 5 loại cảm xúc.
+- Tải tin nhắn theo trang 20 tin.
+- Thông báo thật, badge chưa đọc và đánh dấu tất cả đã đọc.
+- Multi-path `update()` và `increment(1)` cho unread.
 
-# Learn More
+## 7. Kiểm tra trước khi nộp
 
-To learn more about React Native, take a look at the following resources:
+```powershell
+npm run lint
+npm test -- --runInBand
+npx react-native bundle --platform android --dev false `
+  --entry-file index.js `
+  --bundle-output .tmp\index.android.bundle `
+  --assets-dest .tmp\assets
+```
 
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+Không nộp các thư mục `node_modules`, `android/build`, `ios/Pods` và `.tmp`.
+
+## 8. Kịch bản quay video
+
+1. Đăng nhập hai tài khoản trên hai máy ảo.
+2. Tài khoản A mở chat với B, B gõ để A thấy `đang soạn tin…`.
+3. A gửi tin, mở chat trên B để A thấy `Đã xem`.
+4. A giữ tin nhắn, chọn cảm xúc rồi thu hồi một tin khác.
+5. A gửi ảnh và mở ảnh toàn màn hình.
+6. Tài khoản A tạo nhóm với B và tài khoản C.
+7. Gửi tin trong nhóm, kiểm tra tên người gửi, online count và unread.
+8. Mở tab Thông báo, kiểm tra badge và nút đánh dấu tất cả đã đọc.

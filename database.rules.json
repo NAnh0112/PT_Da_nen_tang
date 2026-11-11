@@ -1,0 +1,68 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "users": {
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.uid === $uid",
+        "online": {
+          ".validate": "newData.isBoolean()"
+        },
+        "activeConvId": {
+          ".validate": "newData.isString() || newData.val() === null"
+        }
+      }
+    },
+    "conversations": {
+      "$convId": {
+        ".read": "auth != null && data.child('members').child(auth.uid).val() === true",
+        ".write": "auth != null && ((!data.exists() && newData.child('createdBy').val() === auth.uid && newData.child('members').child(auth.uid).val() === true) || (data.exists() && data.child('createdBy').val() === auth.uid))",
+        ".validate": "newData.hasChildren(['type', 'members', 'createdBy', 'createdAt']) && (newData.child('type').val() === 'direct' || newData.child('type').val() === 'group')"
+      }
+    },
+    "messages": {
+      "$convId": {
+        ".read": "auth != null && root.child('conversations').child($convId).child('members').child(auth.uid).val() === true",
+        "$msgId": {
+          ".write": "auth != null && root.child('conversations').child($convId).child('members').child(auth.uid).val() === true && ((!data.exists() && newData.child('senderId').val() === auth.uid) || (data.exists() && ((data.child('senderId').val() === auth.uid && newData.diff(data).affectedKeys().hasOnly(['recalled']) && newData.child('recalled').val() === true) || (newData.diff(data).affectedKeys().hasOnly(['reactions']) && (newData.child('reactions').child(auth.uid).val() === null || newData.child('reactions').child(auth.uid).val() === '👍' || newData.child('reactions').child(auth.uid).val() === '❤️' || newData.child('reactions').child(auth.uid).val() === '😂' || newData.child('reactions').child(auth.uid).val() === '😮' || newData.child('reactions').child(auth.uid).val() === '😢')))))",
+          ".validate": "!newData.exists() || newData.child('senderId').isString()"
+        }
+      }
+    },
+    "userChats": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        "$convId": {
+          ".write": "auth != null && (auth.uid === $uid || (root.child('conversations').child($convId).child('members').child(auth.uid).val() === true && (newData.child('lastSenderId').val() === auth.uid || root.child('conversations').child($convId).child('createdBy').val() === auth.uid)))"
+        }
+      }
+    },
+    "readStatus": {
+      "$convId": {
+        ".read": "auth != null && root.child('conversations').child($convId).child('members').child(auth.uid).val() === true",
+        "$uid": {
+          ".write": "auth != null && auth.uid === $uid && root.child('conversations').child($convId).child('members').child(auth.uid).val() === true",
+          ".validate": "newData.isNumber()"
+        }
+      }
+    },
+    "typing": {
+      "$convId": {
+        ".read": "auth != null && root.child('conversations').child($convId).child('members').child(auth.uid).val() === true",
+        "$uid": {
+          ".write": "auth != null && auth.uid === $uid && root.child('conversations').child($convId).child('members').child(auth.uid).val() === true",
+          ".validate": "newData.isBoolean()"
+        }
+      }
+    },
+    "notifications": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        "$notificationId": {
+          ".write": "auth != null && (auth.uid === $uid || (newData.child('fromUid').val() === auth.uid && root.child('conversations').child(newData.child('convId').val()).child('members').child(auth.uid).val() === true))"
+        }
+      }
+    }
+  }
+}
